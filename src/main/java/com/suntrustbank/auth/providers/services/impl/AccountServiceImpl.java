@@ -3,6 +3,7 @@ package com.suntrustbank.auth.providers.services.impl;
 import com.suntrustbank.auth.core.configs.cache.ICacheService;
 import com.suntrustbank.auth.core.configs.cache.InMemoryCacheService;
 import com.suntrustbank.auth.core.configs.keycloak.Credentials;
+import com.suntrustbank.auth.core.configs.properties.OtpDevConfig;
 import com.suntrustbank.auth.core.dtos.BaseResponse;
 import com.suntrustbank.auth.core.enums.BaseResponseMessage;
 import com.suntrustbank.auth.core.enums.BaseResponseStatus;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -36,6 +38,8 @@ public class AccountServiceImpl implements AccountService {
     private final KeycloakService keycloakService;
     private final ICacheService accountVerificationCache = new InMemoryCacheService(OTP_EXPIRY_DURATION, TimeUnit.MINUTES);
 
+    private final Environment environment;
+    private final OtpDevConfig otpDevConfig;
 
     @Override
     public BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException {
@@ -154,7 +158,13 @@ public class AccountServiceImpl implements AccountService {
                 throw e;
             }
 
-            String otp = RandomNumberGenerator.generate(6);
+            String otp;
+            if (environment.acceptsProfiles(PRODUCTION, STAGING)) {
+                otp = RandomNumberGenerator.generate(6);
+            } else {
+                otp = otpDevConfig.getResetPinOtp();
+            }
+
             String reference = RESET_PIN.concat(UUID.randomUUID().toString());
             Map<String, Object> valueMap = new HashMap<>();
             valueMap.put(LOGIN_USER, userInput);
