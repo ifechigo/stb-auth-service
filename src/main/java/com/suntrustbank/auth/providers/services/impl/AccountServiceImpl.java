@@ -43,12 +43,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException {
-        var userRepresentation = keycloakService.getUsers(request.getOrganizationId());
-        if (!userRepresentation.isEmpty()) {
-            throw new GenericErrorCodeException("user already exist", ErrorCode.BAD_REQUEST, HttpStatus.CONFLICT);
+        if (!keycloakService.getUsers(request.getOrganizationId()).isEmpty() ) {
+            throw new GenericErrorCodeException("user already exist", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+        }
+        if (!keycloakService.getUsersByPhoneNumber(request.getPhoneNumber()).isEmpty()) {
+            throw new GenericErrorCodeException("phone number already exist", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
         }
 
         keycloakService.createAuthUser(request);
+
         return BaseResponse.success(keycloakService.loginAuthUser(request.getOrganizationId(), request.getPin()), BaseResponseMessage.SUCCESSFUL);
     }
 

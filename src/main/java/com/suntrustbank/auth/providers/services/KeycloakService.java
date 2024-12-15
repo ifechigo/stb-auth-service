@@ -114,7 +114,7 @@ public class KeycloakService {
         }
         return resultList.get(0);
     }
-    public List<UserRepresentation> getUsersByPhoneNumber(String phoneNumber) throws GenericErrorCodeException {
+    public List<UserRepresentation> getUsersByPhoneNumber(String phoneNumber) {
         return userResource.searchByAttributes(UserAttributes.PHONE_NUMBER.getValue().concat(":" + phoneNumber));
     }
 
