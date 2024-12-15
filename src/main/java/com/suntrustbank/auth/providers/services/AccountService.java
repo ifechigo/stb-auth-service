@@ -5,24 +5,16 @@ import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeExcep
 import com.suntrustbank.auth.providers.dtos.*;
 
 public interface AccountService {
-
     BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException;
-
-    BaseResponse verifyEmail(String reference) throws GenericErrorCodeException;
-
-    void updatePhoneNumber(String userId, String phoneNumber) throws GenericErrorCodeException;
-
-    BaseResponse verifyPhoneNumber(String userId, String otp) throws GenericErrorCodeException;
-
     BaseResponse loginUser(AuthRequest requestDto) throws GenericErrorCodeException;
 
-    BaseResponse resendVerifyEmailLink(VerifyEmailRequest requestDto) throws GenericErrorCodeException;
 
-    void passwordReset(PasswordResetRequest requestDto); //forgotPassword
+    BaseResponse updatePhoneNumber(String userId, String phoneNumber) throws GenericErrorCodeException;
+    BaseResponse updateEmail(String userId, String email) throws GenericErrorCodeException;
+    BaseResponse update(String userId, UpdateRequest requestDto) throws GenericErrorCodeException; //update auth profile
+    BaseResponse updatePin(String userId, UpdatePinRequest requestDto) throws GenericErrorCodeException; //change pin
 
-    BaseResponse verifyPasswordReset(PasswordUpdateRequest requestDto) throws GenericErrorCodeException;
-
-    BaseResponse update(String userId, UpdateRequest requestDto) throws GenericErrorCodeException;
-
-    BaseResponse updatePassword(String userId, UpdatePasswordRequest requestDto) throws GenericErrorCodeException;
+    BaseResponse pinReset(PinResetRequest requestDto) throws GenericErrorCodeException; //forgotPin - send OTP
+    BaseResponse verifyPinResetOtp(PinResetOtpRequest requestDto) throws GenericErrorCodeException; //forgotPin - verify otp
+    BaseResponse saveNewPin(PinUpdateRequest requestDto) throws GenericErrorCodeException; //forgotPin - save new pin
 }

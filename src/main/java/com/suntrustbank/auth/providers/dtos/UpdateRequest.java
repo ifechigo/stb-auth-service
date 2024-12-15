@@ -8,5 +8,4 @@ import lombok.Setter;
 public class UpdateRequest {
     private String firstName;
     private String lastName;
-    private String phoneNumber;
 }

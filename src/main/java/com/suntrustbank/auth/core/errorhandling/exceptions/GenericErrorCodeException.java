@@ -41,7 +41,7 @@ public class GenericErrorCodeException extends Exception {
         return new GenericErrorCodeException(ErrorCode.NOT_FOUND);
     }
 
-    public static GenericErrorCodeException passwordResetFailed() {
+    public static GenericErrorCodeException pinResetFailed() {
         return new GenericErrorCodeException(ErrorCode.BAD_REQUEST_RESET_FAILED);
     }
 
@@ -53,8 +53,8 @@ public class GenericErrorCodeException extends Exception {
         return new GenericErrorCodeException(ErrorCode.BAD_REQUEST_EMAIL_VERIFICATION_FAILED);
     }
 
-    public static GenericErrorCodeException incorrectCurrentPassword() {
-        return new GenericErrorCodeException(ErrorCode.BAD_REQUEST_INVALID_CURRENT_PASSWORD);
+    public static GenericErrorCodeException incorrectCurrentPin() {
+        return new GenericErrorCodeException(ErrorCode.BAD_REQUEST_INVALID_CURRENT_PIN);
     }
 
     public static GenericErrorCodeException emailUnverified() {

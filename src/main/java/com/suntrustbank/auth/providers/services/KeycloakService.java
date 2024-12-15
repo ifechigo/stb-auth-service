@@ -6,7 +6,7 @@ import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
 import com.suntrustbank.auth.providers.dtos.AuthCreationRequest;
 import com.suntrustbank.auth.providers.dtos.AuthTokenResponse;
-import com.suntrustbank.auth.providers.dtos.UpdatePasswordRequest;
+import com.suntrustbank.auth.providers.dtos.UpdatePinRequest;
 import com.suntrustbank.auth.providers.dtos.enums.UserAttributes;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
@@ -45,12 +45,11 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public UserRepresentation createAuthUser(AuthCreationRequest userDTO) throws GenericErrorCodeException {
-        CredentialRepresentation credential = Credentials
-                .createPasswordCredentials(userDTO.getPassword());
+        CredentialRepresentation credential = Credentials.createPinCredentials(userDTO.getPin());
         credential.setTemporary(false);
+
         UserRepresentation user = new UserRepresentation();
-        user.setUsername(userDTO.getEmail());
-        user.setEmail(userDTO.getEmail());
+        user.setUsername(userDTO.getOrganizationId());
         user.setAttributes(new HashMap<>());
 
         if (StringUtils.hasText(userDTO.getFirstName())) {
@@ -59,17 +58,21 @@ public class KeycloakService {
         if (StringUtils.hasText(userDTO.getLastName())) {
             user.setLastName(userDTO.getLastName());
         }
+        if (!Objects.isNull(userDTO.getPhoneNumber())) {
+            user.getAttributes().put(UserAttributes.PHONE_NUMBER.getValue(), Collections.singletonList(userDTO.getPhoneNumber()));
+        }
         if (!Objects.isNull(userDTO.getRole())) {
             user.getAttributes().put(UserAttributes.ROLE.getValue(), Collections.singletonList(userDTO.getRole().name()));
         }
 
+        user.setEnabled(true);
         user.setCredentials(Collections.singletonList(credential));
         var userCreationResp = userResource.create(user);
         String body = userCreationResp.readEntity(String.class);
         int status = userCreationResp.getStatus();
 
         if (HttpStatus.valueOf(status).is2xxSuccessful()) {
-            return getUser(userDTO.getEmail());
+            return getUser(userDTO.getOrganizationId());
         } else {
             log.error("keycloak user creation failed with http: {} and error: {} ", status, body);
             if (HttpStatus.valueOf(userCreationResp.getStatus()).is4xxClientError()) {
@@ -116,6 +119,24 @@ public class KeycloakService {
     }
 
     /**
+     * get user by their email
+     *
+     * @param email
+     * @return UserRepresentation
+     */
+    public UserRepresentation getUserByEmail(String email) throws GenericErrorCodeException {
+        List<UserRepresentation> resultList = userResource.searchByEmail(email, Boolean.TRUE);
+
+        if (resultList.isEmpty()) {
+            throw GenericErrorCodeException.notFound();
+        }
+        return resultList.get(0);
+    }
+    public List<UserRepresentation> getUsersByEmail(String email) {
+        return userResource.searchByEmail(email, Boolean.TRUE);
+    }
+
+    /**
      * finds user using {email} on user profile
      *
      * @param userId
@@ -150,21 +171,21 @@ public class KeycloakService {
 
     /**
      * invokes keycloak to initiate
-     * password update for user's
+     * pin update for user's
      *
      * @param userId
      * @param requestDto
      */
-    public void updatePassword(String userId, UpdatePasswordRequest requestDto) throws GenericErrorCodeException {
+    public void updatePin(String userId, UpdatePinRequest requestDto) throws GenericErrorCodeException {
         try {
-            loginAuthUser(userId, requestDto.getOldPassword());
+            loginAuthUser(userId, requestDto.getOldPin());
         } catch (Exception e) {
-            throw GenericErrorCodeException.incorrectCurrentPassword();
+            throw GenericErrorCodeException.incorrectCurrentPin();
         }
 
         UserRepresentation user = getUser(userId);
 
-        CredentialRepresentation credential = Credentials.createPasswordCredentials(requestDto.getNewPassword());
+        CredentialRepresentation credential = Credentials.createPinCredentials(requestDto.getNewPin());
         credential.setTemporary(false);
         user.setCredentials(Collections.singletonList(credential));
 
@@ -182,21 +203,20 @@ public class KeycloakService {
      * Generates authentication token for users
      *
      * @param username
-     * @param password
+     * @param pin
      * @return AuthTokenResponse
      * @throws GenericErrorCodeException
      */
-    public AuthTokenResponse loginAuthUser(String username, String password) throws GenericErrorCodeException {
+    public AuthTokenResponse loginAuthUser(String username, String pin) throws GenericErrorCodeException {
         try {
-            AccessTokenResponse accessTokenResponse = config.newKeycloakBuilderWithPasswordCredentials(username, password)
+            AccessTokenResponse accessTokenResponse = config.newKeycloakBuilderWithPinCredentials(username, pin)
                 .build()
                 .tokenManager()
                 .grantToken();
-
             return AuthTokenResponse.map(accessTokenResponse);
         } catch (Exception e) {
             log.error("keycloak user login failed due to error : {}", e.getMessage());
-            throw new GenericErrorCodeException(e.getLocalizedMessage(), ErrorCode.UN_AUTHENTICATED, HttpStatus.UNAUTHORIZED);
+            throw new GenericErrorCodeException("incorrect phone number or pin", ErrorCode.UN_AUTHENTICATED, HttpStatus.UNAUTHORIZED);
         }
     }
 }

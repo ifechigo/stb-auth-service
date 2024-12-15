@@ -47,7 +47,7 @@ public class KeycloakConfig {
         return keycloak().realm(realm).clients();
     }
 
-    public KeycloakBuilder newKeycloakBuilderWithPasswordCredentials(String username, String password) {
+    public KeycloakBuilder newKeycloakBuilderWithPinCredentials(String username, String pin) {
         return KeycloakBuilder.builder()
                 .realm(realm)
                 .serverUrl(serverUrl)
@@ -56,6 +56,6 @@ public class KeycloakConfig {
                 .grantType(OAuth2Constants.PASSWORD)
                 .scope(OAuth2Constants.SCOPE_OPENID)
                 .username(username)
-                .password(password);
+                .password(pin);
     }
 }
