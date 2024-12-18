@@ -6,7 +6,6 @@ import com.suntrustbank.auth.core.configs.keycloak.Credentials;
 import com.suntrustbank.auth.core.configs.properties.OtpDevConfig;
 import com.suntrustbank.auth.core.dtos.BaseResponse;
 import com.suntrustbank.auth.core.enums.BaseResponseMessage;
-import com.suntrustbank.auth.core.enums.BaseResponseStatus;
 import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
 import com.suntrustbank.auth.core.utils.RandomNumberGenerator;
@@ -14,6 +13,7 @@ import com.suntrustbank.auth.providers.dtos.*;
 import com.suntrustbank.auth.providers.dtos.enums.UserAttributes;
 import com.suntrustbank.auth.providers.services.AccountService;
 import com.suntrustbank.auth.providers.services.KeycloakService;
+import com.suntrustbank.auth.providers.services.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -36,6 +36,7 @@ import static com.suntrustbank.auth.providers.dtos.converter.ModelConverter.mapT
 public class AccountServiceImpl implements AccountService {
 
     private final KeycloakService keycloakService;
+    private final NotificationService notificationService;
     private final ICacheService accountVerificationCache = new InMemoryCacheService(OTP_EXPIRY_DURATION, TimeUnit.MINUTES);
 
     private final Environment environment;
@@ -57,7 +58,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public BaseResponse loginUser(AuthRequest requestDto) throws GenericErrorCodeException {
-        UserRepresentation user = new UserRepresentation();
+        UserRepresentation user;
 
         try {
             if (StringUtils.hasText(requestDto.getPhoneNumber())) {
@@ -173,6 +174,8 @@ public class AccountServiceImpl implements AccountService {
             valueMap.put(LOGIN_USER, userInput);
             valueMap.put(OTP, otp);
             accountVerificationCache.save(reference, mapToJsonConverter(valueMap));
+
+            notificationService.sendSMS(SmsRequest.builder().build());
 
             log.info("==> pin reset opt [{}]", otp);
             return BaseResponse.success(PinResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);

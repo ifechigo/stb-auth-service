@@ -14,7 +14,7 @@ public class PinResetRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Pattern(regexp = "\\d{11}", message = "phoneNumber field must be exactly 11 digits")
+    @Pattern(regexp = "\\d{11}", message = "phone number field must be exactly 11 digits")
     private String phoneNumber;
 
     @AssertTrue(message = "Either email or phone number field must be provided")
