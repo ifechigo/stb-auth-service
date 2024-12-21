@@ -11,8 +11,8 @@ import lombok.Setter;
 @Setter
 @Builder
 public class AuthCreationRequest {
-    @NotBlank(message = "organizationId is required")
-    private String organizationId;
+    @NotBlank(message = "userId is required")
+    private String userId;
 
     @NotBlank(message = "pin is required")
     @Pattern(regexp = "\\d{4}", message = "pin number must be 4 digits")

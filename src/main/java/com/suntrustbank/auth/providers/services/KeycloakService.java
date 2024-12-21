@@ -49,7 +49,7 @@ public class KeycloakService {
         credential.setTemporary(false);
 
         UserRepresentation user = new UserRepresentation();
-        user.setUsername(userDTO.getOrganizationId());
+        user.setUsername(userDTO.getUserId());
         user.setAttributes(new HashMap<>());
 
         if (StringUtils.hasText(userDTO.getFirstName())) {
@@ -72,7 +72,7 @@ public class KeycloakService {
         int status = userCreationResp.getStatus();
 
         if (HttpStatus.valueOf(status).is2xxSuccessful()) {
-            return getUser(userDTO.getOrganizationId());
+            return getUser(userDTO.getUserId());
         } else {
             log.error("keycloak user creation failed with http: {} and error: {} ", status, body);
             if (HttpStatus.valueOf(userCreationResp.getStatus()).is4xxClientError()) {

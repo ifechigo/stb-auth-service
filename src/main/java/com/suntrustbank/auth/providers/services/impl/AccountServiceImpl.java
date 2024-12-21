@@ -44,7 +44,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException {
-        if (!keycloakService.getUsers(request.getOrganizationId()).isEmpty() ) {
+        if (!keycloakService.getUsers(request.getUserId()).isEmpty() ) {
             throw new GenericErrorCodeException("user already exist", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
         }
         if (!keycloakService.getUsersByPhoneNumber(request.getPhoneNumber()).isEmpty()) {
@@ -53,7 +53,7 @@ public class AccountServiceImpl implements AccountService {
 
         keycloakService.createAuthUser(request);
 
-        return BaseResponse.success(keycloakService.loginAuthUser(request.getOrganizationId(), request.getPin()), BaseResponseMessage.SUCCESSFUL);
+        return BaseResponse.success(keycloakService.loginAuthUser(request.getUserId(), request.getPin()), BaseResponseMessage.SUCCESSFUL);
     }
 
     @Override
@@ -63,13 +63,13 @@ public class AccountServiceImpl implements AccountService {
         try {
             if (StringUtils.hasText(requestDto.getPhoneNumber())) {
                 user = keycloakService.getUserByPhoneNumber(requestDto.getPhoneNumber());
-                requestDto.setOrganizationId(user.getUsername());
+                requestDto.setUserId(user.getUsername());
             } else if (StringUtils.hasText(requestDto.getEmail())) {
                 user = keycloakService.getUserByEmail(requestDto.getEmail());
                 if (!user.isEmailVerified()) {
                     throw GenericErrorCodeException.emailUnverified();
                 }
-                requestDto.setOrganizationId(user.getUsername());
+                requestDto.setUserId(user.getUsername());
             }
         } catch (GenericErrorCodeException e) {
             if (e.getErrorCode().equals(ErrorCode.NOT_FOUND)) {
@@ -77,7 +77,7 @@ public class AccountServiceImpl implements AccountService {
             }
         }
 
-        return BaseResponse.success(keycloakService.loginAuthUser(requestDto.getOrganizationId(), requestDto.getPin()), BaseResponseMessage.SUCCESSFUL);
+        return BaseResponse.success(keycloakService.loginAuthUser(requestDto.getUserId(), requestDto.getPin()), BaseResponseMessage.SUCCESSFUL);
     }
 
     @Override

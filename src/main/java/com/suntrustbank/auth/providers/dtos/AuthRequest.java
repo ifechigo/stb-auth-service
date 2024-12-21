@@ -23,7 +23,7 @@ public class AuthRequest {
     private String pin;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String organizationId;
+    private String userId;
 
     @AssertTrue(message = "Either email or phone number field must be provided")
     public boolean isEmailOrPhoneProvided() {
