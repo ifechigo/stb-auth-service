@@ -16,7 +16,7 @@ public class AuthRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Pattern(regexp = "\\d{11}", message = "phoneNumber field must be exactly 11 digits")
+    @Pattern(regexp = "\\d{10}", message = "phoneNumber field must be exactly 10 digits")
     private String phoneNumber;
 
     @NotBlank(message = "pin field is required")

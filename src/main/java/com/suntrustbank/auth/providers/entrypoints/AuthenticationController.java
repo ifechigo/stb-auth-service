@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import static com.suntrustbank.auth.core.constants.Common.USER_NAME;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/v1/auth/user")
 @RequiredArgsConstructor
 public class AuthenticationController {
 

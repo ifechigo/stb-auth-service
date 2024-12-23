@@ -19,7 +19,7 @@ public class AuthCreationRequest {
     private String pin;
 
     @NotBlank(message = "phone number is required")
-    @Pattern(regexp = "\\d{11}", message = "phoneNumber field must be exactly 11 digits")
+    @Pattern(regexp = "\\d{10}", message = "phoneNumber field must be exactly 10 digits")
     private String phoneNumber;
 
     private String firstName;
