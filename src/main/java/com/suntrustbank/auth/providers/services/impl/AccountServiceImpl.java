@@ -8,7 +8,10 @@ import com.suntrustbank.auth.core.dtos.BaseResponse;
 import com.suntrustbank.auth.core.enums.BaseResponseMessage;
 import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
+import com.suntrustbank.auth.core.utils.AESUtil;
 import com.suntrustbank.auth.core.utils.RandomNumberGenerator;
+import com.suntrustbank.auth.core.utils.UUIDGenerator;
+import com.suntrustbank.auth.core.utils.ValidateUtil;
 import com.suntrustbank.auth.providers.dtos.*;
 import com.suntrustbank.auth.providers.dtos.enums.UserAttributes;
 import com.suntrustbank.auth.providers.services.AccountService;
@@ -41,6 +44,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final Environment environment;
     private final OtpDevConfig otpDevConfig;
+    private final AESUtil aesUtil;
 
     @Override
     public BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException {
@@ -169,7 +173,7 @@ public class AccountServiceImpl implements AccountService {
                 otp = otpDevConfig.getResetPinOtp();
             }
 
-            String reference = RESET_PIN.concat(UUID.randomUUID().toString());
+            String reference = RESET_PIN.concat(UUIDGenerator.generate());
             Map<String, Object> valueMap = new HashMap<>();
             valueMap.put(LOGIN_USER, userInput);
             valueMap.put(OTP, otp);
@@ -197,7 +201,7 @@ public class AccountServiceImpl implements AccountService {
 
             jsonToMapConverter(value).remove(OTP);
 
-            String reference = RESET_PIN.concat(UUID.randomUUID().toString());
+            String reference = RESET_PIN.concat(UUIDGenerator.generate());
             accountVerificationCache.save(reference, mapToJsonConverter(jsonToMapConverter(value)));
 
             return BaseResponse.success(PinResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
@@ -218,7 +222,6 @@ public class AccountServiceImpl implements AccountService {
             }
 
             Map<String, Object> mappedValue = jsonToMapConverter(value);
-
             UserRepresentation user = new UserRepresentation();
             if (mappedValue.get(LOGIN_USER).toString().matches("\\d+")) {
                 user = keycloakService.getUserByPhoneNumber(mappedValue.get(LOGIN_USER).toString());
@@ -226,7 +229,10 @@ public class AccountServiceImpl implements AccountService {
                 user = keycloakService.getUserByEmail(mappedValue.get(LOGIN_USER).toString());
             }
 
-            CredentialRepresentation credential = Credentials.createPinCredentials(requestDto.getNewPin());
+            String pin = aesUtil.decrypt(requestDto.getPin(), String.class);
+            ValidateUtil.isValidPinPattern(pin);
+
+            CredentialRepresentation credential = Credentials.createPinCredentials(pin);
             credential.setTemporary(false);
             user.setCredentials(Collections.singletonList(credential));
 

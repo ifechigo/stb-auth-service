@@ -29,6 +29,10 @@ public class GenericErrorCodeException extends Exception {
         return new GenericErrorCodeException(ErrorCode.SERVICE_UNAVAILABLE);
     }
 
+    public static GenericErrorCodeException badRequest(String message) {
+        return new GenericErrorCodeException(message, ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+    }
+
     public static GenericErrorCodeException duplicateEmailRequest() {
         return new GenericErrorCodeException(ErrorCode.DUPLICATE_REQUEST);
     }

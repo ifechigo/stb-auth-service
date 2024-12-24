@@ -15,7 +15,6 @@ public class AuthCreationRequest {
     private String userId;
 
     @NotBlank(message = "pin is required")
-    @Pattern(regexp = "\\d{4}", message = "pin number must be 4 digits")
     private String pin;
 
     @NotBlank(message = "phone number is required")

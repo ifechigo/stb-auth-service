@@ -4,6 +4,8 @@ import com.suntrustbank.auth.core.configs.keycloak.Credentials;
 import com.suntrustbank.auth.core.configs.keycloak.KeycloakConfig;
 import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
+import com.suntrustbank.auth.core.utils.AESUtil;
+import com.suntrustbank.auth.core.utils.ValidateUtil;
 import com.suntrustbank.auth.providers.dtos.AuthCreationRequest;
 import com.suntrustbank.auth.providers.dtos.AuthTokenResponse;
 import com.suntrustbank.auth.providers.dtos.UpdatePinRequest;
@@ -37,6 +39,8 @@ public class KeycloakService {
     @Resource
     private final KeycloakConfig config;
 
+    private final AESUtil aesUtil;
+
 
     /**
      * invokes keycloak service for user profile creation
@@ -45,7 +49,10 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public UserRepresentation createAuthUser(AuthCreationRequest userDTO) throws GenericErrorCodeException {
-        CredentialRepresentation credential = Credentials.createPinCredentials(userDTO.getPin());
+        String pin = aesUtil.decrypt(userDTO.getPin(), String.class);
+        ValidateUtil.isValidPinPattern(pin);
+
+        CredentialRepresentation credential = Credentials.createPinCredentials(pin);
         credential.setTemporary(false);
 
         UserRepresentation user = new UserRepresentation();
@@ -185,7 +192,9 @@ public class KeycloakService {
 
         UserRepresentation user = getUser(userId);
 
-        CredentialRepresentation credential = Credentials.createPinCredentials(requestDto.getNewPin());
+        String pin = aesUtil.decrypt(requestDto.getNewPin(), String.class);
+        ValidateUtil.isValidPinPattern(pin);
+        CredentialRepresentation credential = Credentials.createPinCredentials(pin);
         credential.setTemporary(false);
         user.setCredentials(Collections.singletonList(credential));
 
@@ -203,12 +212,14 @@ public class KeycloakService {
      * Generates authentication token for users
      *
      * @param username
-     * @param pin
+     * @param encryptedPin
      * @return AuthTokenResponse
      * @throws GenericErrorCodeException
      */
-    public AuthTokenResponse loginAuthUser(String username, String pin) throws GenericErrorCodeException {
+    public AuthTokenResponse loginAuthUser(String username, String encryptedPin) throws GenericErrorCodeException {
         try {
+            String pin = aesUtil.decrypt(encryptedPin, String.class);
+            ValidateUtil.isValidPinPattern(pin);
             AccessTokenResponse accessTokenResponse = config.newKeycloakBuilderWithPinCredentials(username, pin)
                 .build()
                 .tokenManager()
