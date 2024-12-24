@@ -57,20 +57,6 @@ public class AESUtil {
         }
     }
 
-    // Encrypt data
-    public String encrypt(String data) throws GenericErrorCodeException {
-        SecretKey key = deriveKey();
-        try {
-            Cipher cipher = Cipher.getInstance(AES_ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            byte[] encryptedBytes = cipher.doFinal(data.getBytes());
-            return Base64.getEncoder().encodeToString(encryptedBytes);
-        } catch (Exception e) {
-            log.info("Error Encrypting data:: {}", e.getMessage(), e);
-            throw new GenericErrorCodeException("encryption failed", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
-        }
-    }
-
     public String encrypt(Object data) throws Exception {
         SecretKey key = deriveKey();
         try {
@@ -89,7 +75,6 @@ public class AESUtil {
         }
     }
 
-    // Decrypt data
     public <T> T decrypt(String encryptedData, Class<T> targetType) throws GenericErrorCodeException {
         SecretKey key = deriveKey();
         try {
