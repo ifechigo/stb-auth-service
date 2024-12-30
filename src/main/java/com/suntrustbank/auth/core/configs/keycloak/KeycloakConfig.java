@@ -58,4 +58,14 @@ public class KeycloakConfig {
                 .username(username)
                 .password(pin);
     }
+
+    public KeycloakBuilder newKeycloakBuilderWithClientCredentials(String terminalSerialNo, String terminalSecret) {
+        return KeycloakBuilder.builder()
+                .realm(realm)
+                .serverUrl(serverUrl)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .scope(OAuth2Constants.SCOPE_OPENID)
+                .clientId(terminalSerialNo)
+                .clientSecret(terminalSecret);
+    }
 }

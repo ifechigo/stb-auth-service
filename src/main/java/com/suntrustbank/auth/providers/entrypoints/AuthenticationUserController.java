@@ -15,7 +15,7 @@ import static com.suntrustbank.auth.core.constants.Common.USER_NAME;
 @RestController
 @RequestMapping("/v1/auth/user")
 @RequiredArgsConstructor
-public class AuthenticationController {
+public class AuthenticationUserController {
 
     private final AccountService accountService;
     private final JwtUtil jwtService;
@@ -26,8 +26,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/token")
-    public BaseResponse authenticate(@RequestBody @Validated AuthRequest requestDto) throws GenericErrorCodeException {
-        return accountService.loginUser(requestDto);
+    public BaseResponse authenticate(@RequestBody @Validated EncryptedRequest request) throws GenericErrorCodeException {
+        return accountService.loginUser(request);
     }
 
 

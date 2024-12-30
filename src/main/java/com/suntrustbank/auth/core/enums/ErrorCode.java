@@ -17,6 +17,7 @@ public enum ErrorCode {
     DUPLICATE_REQUEST(409, "email provided already exist"),
     DUPLICATE_PHONE_REQUEST(409, "phone number provided already exist"),
     NOT_FOUND(404, "user doesn't exist"),
+    CLIENT_NOT_FOUND(404, "terminal doesn't exist"),
     UN_AUTHENTICATED(401, "Unauthorized"),
     UN_AUTHENTICATED_TOKEN(401, "Unauthorized invalid token"),
     LOGIN_FAILED(401, "Log In failed"),

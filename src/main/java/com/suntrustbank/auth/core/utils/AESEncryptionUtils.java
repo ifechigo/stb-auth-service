@@ -3,10 +3,8 @@ package com.suntrustbank.auth.core.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
-import io.micrometer.common.util.StringUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 
@@ -22,31 +20,16 @@ import java.util.Base64;
 @Slf4j
 @Getter
 @Configuration
-public class AESUtil {
-
-    @Value("${spring.encryption.passphrase}")
-    private String passphrase;
-
-    @Value("${spring.encryption.salt}")
-    private String salt;
+public class AESEncryptionUtils {
 
     private static final String AES_ALGORITHM = "AES";
     private static final String PWH_ALGORITHM = "PBKDF2WithHmacSHA256";
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private char[] getPassphrase() {
-        if (StringUtils.isBlank(passphrase)) {
-            log.info("No passphrase parsed");
-            return null;
-        }
-        log.info("Passphrase parsed");
-        return passphrase.toCharArray();
-    }
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // Derive AES Key from a Passphrase
-    private SecretKey deriveKey() throws GenericErrorCodeException {
+    private static SecretKey deriveKey(String passphrase, String salt) throws GenericErrorCodeException {
         try {
-            PBEKeySpec spec = new PBEKeySpec(getPassphrase(), salt.getBytes(), 65536, 128);
+            PBEKeySpec spec = new PBEKeySpec(passphrase.toCharArray(), salt.getBytes(), 65536, 128);
 
             SecretKeyFactory factory = SecretKeyFactory.getInstance(PWH_ALGORITHM);
             byte[] keyBytes = factory.generateSecret(spec).getEncoded();
@@ -57,12 +40,12 @@ public class AESUtil {
         }
     }
 
-    public String encrypt(Object data) throws Exception {
-        SecretKey key = deriveKey();
+    public static String encrypt(String passphrase, String salt, Object data) throws GenericErrorCodeException {
+        SecretKey key = deriveKey(passphrase, salt);
         try {
             String jsonData = (data instanceof String)
                     ? (String) data
-                    : objectMapper.writeValueAsString(data);
+                    : OBJECT_MAPPER.writeValueAsString(data);
 
             Cipher cipher = Cipher.getInstance(AES_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
@@ -71,12 +54,12 @@ public class AESUtil {
             return Base64.getEncoder().encodeToString(encryptedBytes);
         } catch (Exception e) {
             log.info("Error Encrypting data:: {}", e.getMessage(), e);
-            throw new Exception("encryption failed", e);
+            throw GenericErrorCodeException.serverError();
         }
     }
 
-    public <T> T decrypt(String encryptedData, Class<T> targetType) throws GenericErrorCodeException {
-        SecretKey key = deriveKey();
+    public static <T> T decrypt(String passphrase, String salt, String encryptedData, Class<T> targetType) throws GenericErrorCodeException {
+        SecretKey key = deriveKey(passphrase, salt);
         try {
             byte[] encryptedBytes = Base64.getDecoder().decode(encryptedData);
 
@@ -84,11 +67,9 @@ public class AESUtil {
             cipher.init(Cipher.DECRYPT_MODE, key);
             String decryptedString = new String(cipher.doFinal(encryptedBytes), StandardCharsets.UTF_8);
 
-            // Check if the decrypted string is JSON
             if (isValidJson(decryptedString)) {
-                return objectMapper.readValue(decryptedString, targetType);
+                return OBJECT_MAPPER.readValue(decryptedString, targetType);
             } else {
-                // Return as a plain string
                 return (T) decryptedString;
             }
         } catch (Exception e) {
@@ -97,9 +78,9 @@ public class AESUtil {
         }
     }
 
-    private boolean isValidJson(String data) {
+    private static boolean isValidJson(String data) {
         try {
-            objectMapper.readTree(data);
+            OBJECT_MAPPER.readTree(data);
             return true;
         } catch (Exception e) {
             return false;

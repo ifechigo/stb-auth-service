@@ -3,12 +3,13 @@ package com.suntrustbank.auth.providers.services.impl;
 import com.suntrustbank.auth.core.configs.cache.ICacheService;
 import com.suntrustbank.auth.core.configs.cache.InMemoryCacheService;
 import com.suntrustbank.auth.core.configs.keycloak.Credentials;
+import com.suntrustbank.auth.core.configs.properties.AuthConfig;
 import com.suntrustbank.auth.core.configs.properties.OtpDevConfig;
 import com.suntrustbank.auth.core.dtos.BaseResponse;
 import com.suntrustbank.auth.core.enums.BaseResponseMessage;
 import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
-import com.suntrustbank.auth.core.utils.AESUtil;
+import com.suntrustbank.auth.core.utils.AESEncryptionUtils;
 import com.suntrustbank.auth.core.utils.RandomNumberGenerator;
 import com.suntrustbank.auth.core.utils.UUIDGenerator;
 import com.suntrustbank.auth.core.utils.ValidateUtil;
@@ -44,7 +45,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final Environment environment;
     private final OtpDevConfig otpDevConfig;
-    private final AESUtil aesUtil;
+    private final AuthConfig authConfig;
 
     @Override
     public BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException {
@@ -61,7 +62,9 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public BaseResponse loginUser(AuthRequest requestDto) throws GenericErrorCodeException {
+    public BaseResponse loginUser(EncryptedRequest request) throws GenericErrorCodeException {
+
+        AuthRequest requestDto = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), request.getData(), AuthRequest.class);
         UserRepresentation user;
 
         try {
@@ -229,7 +232,7 @@ public class AccountServiceImpl implements AccountService {
                 user = keycloakService.getUserByEmail(mappedValue.get(LOGIN_USER).toString());
             }
 
-            String pin = aesUtil.decrypt(requestDto.getPin(), String.class);
+            String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getPin(), String.class);
             ValidateUtil.isValidPinPattern(pin);
 
             CredentialRepresentation credential = Credentials.createPinCredentials(pin);

@@ -45,6 +45,10 @@ public class GenericErrorCodeException extends Exception {
         return new GenericErrorCodeException(ErrorCode.NOT_FOUND);
     }
 
+    public static GenericErrorCodeException clientNotFound() {
+        return new GenericErrorCodeException(ErrorCode.CLIENT_NOT_FOUND);
+    }
+
     public static GenericErrorCodeException pinResetFailed() {
         return new GenericErrorCodeException(ErrorCode.BAD_REQUEST_RESET_FAILED);
     }

@@ -2,9 +2,10 @@ package com.suntrustbank.auth.providers.services;
 
 import com.suntrustbank.auth.core.configs.keycloak.Credentials;
 import com.suntrustbank.auth.core.configs.keycloak.KeycloakConfig;
+import com.suntrustbank.auth.core.configs.properties.AuthConfig;
 import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
-import com.suntrustbank.auth.core.utils.AESUtil;
+import com.suntrustbank.auth.core.utils.AESEncryptionUtils;
 import com.suntrustbank.auth.core.utils.ValidateUtil;
 import com.suntrustbank.auth.providers.dtos.AuthCreationRequest;
 import com.suntrustbank.auth.providers.dtos.AuthTokenResponse;
@@ -39,7 +40,7 @@ public class KeycloakService {
     @Resource
     private final KeycloakConfig config;
 
-    private final AESUtil aesUtil;
+    private final AuthConfig authConfig;
 
 
     /**
@@ -49,7 +50,7 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public UserRepresentation createAuthUser(AuthCreationRequest userDTO) throws GenericErrorCodeException {
-        String pin = aesUtil.decrypt(userDTO.getPin(), String.class);
+        String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), userDTO.getPin(), String.class);
         ValidateUtil.isValidPinPattern(pin);
 
         CredentialRepresentation credential = Credentials.createPinCredentials(pin);
@@ -192,7 +193,7 @@ public class KeycloakService {
 
         UserRepresentation user = getUser(userId);
 
-        String pin = aesUtil.decrypt(requestDto.getNewPin(), String.class);
+        String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getNewPin(), String.class);
         ValidateUtil.isValidPinPattern(pin);
         CredentialRepresentation credential = Credentials.createPinCredentials(pin);
         credential.setTemporary(false);
@@ -218,7 +219,7 @@ public class KeycloakService {
      */
     public AuthTokenResponse loginAuthUser(String username, String encryptedPin) throws GenericErrorCodeException {
         try {
-            String pin = aesUtil.decrypt(encryptedPin, String.class);
+            String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), encryptedPin, String.class);
             ValidateUtil.isValidPinPattern(pin);
             AccessTokenResponse accessTokenResponse = config.newKeycloakBuilderWithPinCredentials(username, pin)
                 .build()
@@ -228,6 +229,19 @@ public class KeycloakService {
         } catch (Exception e) {
             log.error("keycloak user login failed due to error : {}", e.getMessage());
             throw new GenericErrorCodeException("incorrect phone number or pin", ErrorCode.UN_AUTHENTICATED, HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    public AuthTokenResponse loginClient(String terminalSerialNo, String terminalSecret) throws GenericErrorCodeException {
+        try {
+            AccessTokenResponse accessTokenResponse = config.newKeycloakBuilderWithClientCredentials(terminalSerialNo, terminalSecret)
+                    .build()
+                    .tokenManager()
+                    .grantToken();
+            return AuthTokenResponse.map(accessTokenResponse);
+        } catch (Exception e) {
+            log.error("keycloak client login failed due to error : ", e);
+            throw new GenericErrorCodeException("invalid credentials parsed", ErrorCode.UN_AUTHENTICATED, HttpStatus.UNAUTHORIZED);
         }
     }
 }

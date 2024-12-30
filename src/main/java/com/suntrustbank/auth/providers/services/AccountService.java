@@ -6,8 +6,7 @@ import com.suntrustbank.auth.providers.dtos.*;
 
 public interface AccountService {
     BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException;
-    BaseResponse loginUser(AuthRequest requestDto) throws GenericErrorCodeException;
-
+    BaseResponse loginUser(EncryptedRequest request) throws GenericErrorCodeException;
 
     BaseResponse updatePhoneNumber(String userId, String phoneNumber) throws GenericErrorCodeException;
     BaseResponse updateEmail(String userId, String email) throws GenericErrorCodeException;
