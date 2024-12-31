@@ -11,7 +11,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Builder
 public class AuthRequest {
     @Email(message = "Invalid email format")
     private String email;
