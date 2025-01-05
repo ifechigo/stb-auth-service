@@ -1,14 +1,15 @@
 package com.suntrustbank.auth.core.configs.properties;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import lombok.*;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
-@Getter
-@Component
+@Data
+@Generated
+@Configuration
+@NoArgsConstructor
+@AllArgsConstructor
+@ConfigurationProperties(prefix = "development")
 public class OtpDevConfig {
-
-    @Value("${development.reset.pin.otp}")
     private String resetPinOtp;
-
 }
