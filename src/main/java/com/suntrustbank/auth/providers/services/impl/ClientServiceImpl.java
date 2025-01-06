@@ -64,7 +64,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public BaseResponse loginClient(EncryptedRequest requestDto) throws GenericErrorCodeException {
         AuthTerminalRequestDto authTerminalRequestDto = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getData(), AuthTerminalRequestDto.class);
-        FieldValidatorUtil.validate(requestDto);
+        FieldValidatorUtil.validate(authTerminalRequestDto);
 
         List<ClientRepresentation> resource = clientResource.findByClientId(authTerminalRequestDto.getTerminalSerialNo());
 
