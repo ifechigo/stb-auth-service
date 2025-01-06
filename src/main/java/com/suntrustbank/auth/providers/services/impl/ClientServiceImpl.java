@@ -5,6 +5,7 @@ import com.suntrustbank.auth.core.dtos.BaseResponse;
 import com.suntrustbank.auth.core.enums.BaseResponseMessage;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
 import com.suntrustbank.auth.core.utils.AESEncryptionUtils;
+import com.suntrustbank.auth.core.utils.FieldValidatorUtil;
 import com.suntrustbank.auth.providers.dtos.CreateTerminalClientRequest;
 import com.suntrustbank.auth.providers.dtos.AuthTerminalRequestDto;
 import com.suntrustbank.auth.providers.dtos.AuthTokenResponse;
@@ -63,6 +64,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public BaseResponse loginClient(EncryptedRequest requestDto) throws GenericErrorCodeException {
         AuthTerminalRequestDto authTerminalRequestDto = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getData(), AuthTerminalRequestDto.class);
+        FieldValidatorUtil.validate(requestDto);
 
         List<ClientRepresentation> resource = clientResource.findByClientId(authTerminalRequestDto.getTerminalSerialNo());
 

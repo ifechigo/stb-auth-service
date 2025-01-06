@@ -9,10 +9,7 @@ import com.suntrustbank.auth.core.dtos.BaseResponse;
 import com.suntrustbank.auth.core.enums.BaseResponseMessage;
 import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
-import com.suntrustbank.auth.core.utils.AESEncryptionUtils;
-import com.suntrustbank.auth.core.utils.RandomNumberGenerator;
-import com.suntrustbank.auth.core.utils.UUIDGenerator;
-import com.suntrustbank.auth.core.utils.ValidateUtil;
+import com.suntrustbank.auth.core.utils.*;
 import com.suntrustbank.auth.providers.dtos.*;
 import com.suntrustbank.auth.providers.dtos.enums.UserAttributes;
 import com.suntrustbank.auth.providers.services.AccountService;
@@ -65,6 +62,7 @@ public class AccountServiceImpl implements AccountService {
     public BaseResponse loginUser(EncryptedRequest request) throws GenericErrorCodeException {
 
         AuthRequest requestDto = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), request.getData(), AuthRequest.class);
+        FieldValidatorUtil.validate(requestDto);
         UserRepresentation user;
 
         try {

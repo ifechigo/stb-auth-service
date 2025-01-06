@@ -1,11 +1,9 @@
 package com.suntrustbank.auth.providers.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,9 +21,4 @@ public class AuthRequest {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String userId;
-
-    @AssertTrue(message = "Either email or phone number field must be provided")
-    public boolean isEmailOrPhoneProvided() {
-        return (email != null && !email.isBlank()) || (phoneNumber != null && !phoneNumber.isBlank());
-    }
 }
