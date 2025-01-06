@@ -159,6 +159,8 @@ public class AccountServiceImpl implements AccountService {
                         throw GenericErrorCodeException.emailUnverified();
                     }
                     userInput = requestDto.getEmail();
+                } else {
+                    throw GenericErrorCodeException.badRequest("invalid user input");
                 }
             } catch (GenericErrorCodeException e) {
                 if (e.getErrorCode().equals(ErrorCode.NOT_FOUND)) {
