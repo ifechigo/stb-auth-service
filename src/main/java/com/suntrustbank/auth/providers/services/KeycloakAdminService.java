@@ -24,18 +24,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class KeycloakService {
+public class KeycloakAdminService {
 
-    @Value("${keycloak.realm}")
-    private String realm;
+    @Value("${keycloak.admin_realm}")
+    private String adminRealm;
 
-    @Resource(name = "userResource")
-    private final UsersResource userResource;
+    @Resource(name = "adminUserResource")
+    private final UsersResource adminUserResource;
 
     @Resource
     private final KeycloakConfig config;
@@ -75,7 +78,7 @@ public class KeycloakService {
 
         user.setEnabled(true);
         user.setCredentials(Collections.singletonList(credential));
-        var userCreationResp = userResource.create(user);
+        var userCreationResp = adminUserResource.create(user);
         String body = userCreationResp.readEntity(String.class);
         int status = userCreationResp.getStatus();
 
@@ -97,7 +100,7 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public UserRepresentation getUser(String userName) throws GenericErrorCodeException {
-        List<UserRepresentation> resultList = userResource.search(userName);
+        List<UserRepresentation> resultList = adminUserResource.search(userName);
 
         if (resultList.isEmpty()) {
             throw GenericErrorCodeException.notFound();
@@ -105,7 +108,7 @@ public class KeycloakService {
         return resultList.get(0);
     }
     public List<UserRepresentation> getUsers(String userName) {
-        return userResource.search(userName);
+        return adminUserResource.search(userName);
     }
 
     /**
@@ -115,7 +118,7 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public UserRepresentation getUserByPhoneNumber(String phoneNumber) throws GenericErrorCodeException {
-        List<UserRepresentation> resultList = userResource.searchByAttributes(UserAttributes.PHONE_NUMBER.getValue().concat(":" + phoneNumber));
+        List<UserRepresentation> resultList = adminUserResource.searchByAttributes(UserAttributes.PHONE_NUMBER.getValue().concat(":" + phoneNumber));
 
         if (resultList.isEmpty()) {
             throw GenericErrorCodeException.notFound();
@@ -123,7 +126,7 @@ public class KeycloakService {
         return resultList.get(0);
     }
     public List<UserRepresentation> getUsersByPhoneNumber(String phoneNumber) {
-        return userResource.searchByAttributes(UserAttributes.PHONE_NUMBER.getValue().concat(":" + phoneNumber));
+        return adminUserResource.searchByAttributes(UserAttributes.PHONE_NUMBER.getValue().concat(":" + phoneNumber));
     }
 
     /**
@@ -133,7 +136,7 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public UserRepresentation getUserByEmail(String email) throws GenericErrorCodeException {
-        List<UserRepresentation> resultList = userResource.searchByEmail(email, Boolean.TRUE);
+        List<UserRepresentation> resultList = adminUserResource.searchByEmail(email, Boolean.TRUE);
 
         if (resultList.isEmpty()) {
             throw GenericErrorCodeException.notFound();
@@ -141,7 +144,7 @@ public class KeycloakService {
         return resultList.get(0);
     }
     public List<UserRepresentation> getUsersByEmail(String email) {
-        return userResource.searchByEmail(email, Boolean.TRUE);
+        return adminUserResource.searchByEmail(email, Boolean.TRUE);
     }
 
     /**
@@ -151,7 +154,7 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public UserRepresentation getUserById(String userId) {
-        return userResource.get(userId).toRepresentation();
+        return adminUserResource.get(userId).toRepresentation();
     }
 
     /**
@@ -161,7 +164,7 @@ public class KeycloakService {
      * @return UserRepresentation
      */
     public void sendVerificationEmail(String email) throws GenericErrorCodeException {
-        var userRes =  userResource.get(getUser(email).getId());
+        var userRes =  adminUserResource.get(getUser(email).getId());
 
         userRes.sendVerifyEmail();
         userRes.executeActionsEmail(List.of("VERIFY_EMAIL"), 10);
@@ -174,7 +177,7 @@ public class KeycloakService {
      * @param representation
      */
     public void updateUser(UserRepresentation representation) {
-        userResource.get(representation.getId()).update(representation);
+        adminUserResource.get(representation.getId()).update(representation);
     }
 
     /**
@@ -199,11 +202,11 @@ public class KeycloakService {
         credential.setTemporary(false);
         user.setCredentials(Collections.singletonList(credential));
 
-        final UserSessionRepresentation[] sessions = userResource.get(user.getId()).
+        final UserSessionRepresentation[] sessions = adminUserResource.get(user.getId()).
                 getUserSessions().
                 toArray(new UserSessionRepresentation[0]);
         for (final UserSessionRepresentation session : sessions) {
-            config.keycloak().realm(realm).deleteSession(session.getId());
+            config.adminKeycloak().realm(adminRealm).deleteSession(session.getId());
         }
 
         updateUser(user);
@@ -221,7 +224,7 @@ public class KeycloakService {
         try {
             String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), encryptedPin, String.class);
             ValidateUtil.isValidPinPattern(pin);
-            AccessTokenResponse accessTokenResponse = config.newKeycloakBuilderWithPinCredentials(username, pin)
+            AccessTokenResponse accessTokenResponse = config.newAdminKeycloakBuilderWithPinCredentials(username, pin)
                 .build()
                 .tokenManager()
                 .grantToken();
@@ -234,7 +237,7 @@ public class KeycloakService {
 
     public AuthTokenResponse loginClient(String terminalSerialNo, String terminalSecret) throws GenericErrorCodeException {
         try {
-            AccessTokenResponse accessTokenResponse = config.newKeycloakBuilderWithClientCredentials(terminalSerialNo, terminalSecret)
+            AccessTokenResponse accessTokenResponse = config.newAdminKeycloakBuilderWithClientCredentials(terminalSerialNo, terminalSecret)
                     .build()
                     .tokenManager()
                     .grantToken();
