@@ -13,7 +13,7 @@ public interface AccountService {
     BaseResponse update(String userId, UpdateRequest requestDto) throws GenericErrorCodeException; //update auth profile
     BaseResponse updatePin(String userId, UpdatePinRequest requestDto) throws GenericErrorCodeException; //change pin
 
-    BaseResponse pinReset(PinResetRequest requestDto) throws GenericErrorCodeException; //forgotPin - send OTP
-    BaseResponse verifyPinResetOtp(PinResetOtpRequest requestDto) throws GenericErrorCodeException; //forgotPin - verify otp
+    BaseResponse pinReset(ResetRequest requestDto) throws GenericErrorCodeException; //forgotPin - send OTP
+    BaseResponse verifyPinResetOtp(ResetOtpRequest requestDto) throws GenericErrorCodeException; //forgotPin - verify otp
     BaseResponse saveNewPin(PinUpdateRequest requestDto) throws GenericErrorCodeException; //forgotPin - save new pin
 }

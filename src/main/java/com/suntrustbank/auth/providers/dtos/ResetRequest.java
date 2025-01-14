@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Generated
-public class PinResetRequest {
+public class ResetRequest {
     @Email(message = "Invalid email format")
     private String email;
 

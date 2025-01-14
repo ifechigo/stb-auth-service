@@ -11,8 +11,9 @@ import com.suntrustbank.auth.core.enums.ErrorCode;
 import com.suntrustbank.auth.core.errorhandling.exceptions.GenericErrorCodeException;
 import com.suntrustbank.auth.core.utils.*;
 import com.suntrustbank.auth.providers.dtos.*;
-import com.suntrustbank.auth.providers.dtos.enums.UserAttributes;
-import com.suntrustbank.auth.providers.services.*;
+import com.suntrustbank.auth.providers.services.AdminAccountService;
+import com.suntrustbank.auth.providers.services.KeycloakAdminService;
+import com.suntrustbank.auth.providers.services.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -46,44 +47,36 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     private final AuthConfig authConfig;
 
     @Override
-    public BaseResponse createUser(AuthCreationRequest request) throws GenericErrorCodeException {
-        if (!keycloakAdminService.getUsers(request.getUserId()).isEmpty() ) {
+    public BaseResponse createUser(AuthAdminCreationRequest request) throws GenericErrorCodeException {
+        if (!keycloakAdminService.getUsers(request.getEmail()).isEmpty() ) {
             throw new GenericErrorCodeException("user already exist", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
-        }
-        if (!keycloakAdminService.getUsersByPhoneNumber(request.getPhoneNumber()).isEmpty()) {
-            throw new GenericErrorCodeException("phone number already exist", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
         }
 
         keycloakAdminService.createAuthUser(request);
 
-        return BaseResponse.success(keycloakAdminService.loginAuthUser(request.getUserId(), request.getPin()), BaseResponseMessage.SUCCESSFUL);
+        return BaseResponse.success(keycloakAdminService.loginAuthUser(request.getEmail(), request.getPassword()), BaseResponseMessage.SUCCESSFUL);
     }
 
     @Override
     public BaseResponse loginUser(EncryptedRequest request) throws GenericErrorCodeException {
-
-        AuthRequest requestDto = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), request.getData(), AuthRequest.class);
+        AuthAdminRequest requestDto = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), request.getData(), AuthAdminRequest.class);
         FieldValidatorUtil.validate(requestDto);
         UserRepresentation user;
 
         try {
-            if (StringUtils.hasText(requestDto.getPhoneNumber())) {
-                user = keycloakAdminService.getUserByPhoneNumber(requestDto.getPhoneNumber());
-                requestDto.setUserId(user.getUsername());
-            } else if (StringUtils.hasText(requestDto.getEmail())) {
+            if (StringUtils.hasText(requestDto.getEmail())) {
                 user = keycloakAdminService.getUserByEmail(requestDto.getEmail());
                 if (!user.isEmailVerified()) {
                     throw GenericErrorCodeException.emailUnverified();
                 }
-                requestDto.setUserId(user.getUsername());
             }
         } catch (GenericErrorCodeException e) {
             if (e.getErrorCode().equals(ErrorCode.NOT_FOUND)) {
-                throw new GenericErrorCodeException("incorrect phone number or pin", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+                throw new GenericErrorCodeException("incorrect email or password", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
             }
         }
 
-        return BaseResponse.success(keycloakAdminService.loginAuthUser(requestDto.getUserId(), requestDto.getPin()), BaseResponseMessage.SUCCESSFUL);
+        return BaseResponse.success(keycloakAdminService.loginAuthUser(requestDto.getEmail(), requestDto.getPassword()), BaseResponseMessage.SUCCESSFUL);
     }
 
     @Override
@@ -98,27 +91,6 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
         user.setEmail(email);
         user.setEmailVerified(true);
-        keycloakAdminService.updateUser(user);
-
-        return BaseResponse.success(UPDATED, BaseResponseMessage.SUCCESSFUL);
-    }
-
-    @Override
-    public BaseResponse updatePhoneNumber(String userId, String phoneNumber) throws GenericErrorCodeException {
-        var userWithPhoneNumber = keycloakAdminService.getUsersByPhoneNumber(phoneNumber);
-
-        if (!userWithPhoneNumber.isEmpty()) {
-            throw GenericErrorCodeException.duplicatePhoneNumberRequest();
-        }
-
-        var user = keycloakAdminService.getUser(userId);
-
-        if (user.getAttributes() == null) {
-            user.setAttributes(new HashMap<>());
-        }
-
-        user.getAttributes().put(UserAttributes.PHONE_NUMBER.getValue(), Collections.singletonList(phoneNumber));
-
         keycloakAdminService.updateUser(user);
 
         return BaseResponse.success(UPDATED, BaseResponseMessage.SUCCESSFUL);
@@ -141,20 +113,17 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     }
 
     @Override
-    public BaseResponse updatePin(String userId, UpdatePinRequest requestDto) throws GenericErrorCodeException {
-        keycloakAdminService.updatePin(userId, requestDto);
+    public BaseResponse updatePassword(String userId, UpdatePasswordRequest requestDto) throws GenericErrorCodeException {
+        keycloakAdminService.updatePassword(userId, requestDto);
         return BaseResponse.success(UPDATED, BaseResponseMessage.SUCCESSFUL);
     }
 
     @Override
-    public BaseResponse pinReset(PinResetRequest requestDto) throws GenericErrorCodeException {
+    public BaseResponse passwordReset(ResetRequest requestDto) throws GenericErrorCodeException {
         String userInput = "";
         try {
             try {
-                if (StringUtils.hasText(requestDto.getPhoneNumber())) {
-                    keycloakAdminService.getUserByPhoneNumber(requestDto.getPhoneNumber());
-                    userInput = requestDto.getPhoneNumber();
-                } else if (StringUtils.hasText(requestDto.getEmail())) {
+                if (StringUtils.hasText(requestDto.getEmail())) {
                     var user = keycloakAdminService.getUserByEmail(requestDto.getEmail());
                     if (!user.isEmailVerified()) {
                         throw GenericErrorCodeException.emailUnverified();
@@ -165,7 +134,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
                 }
             } catch (GenericErrorCodeException e) {
                 if (e.getErrorCode().equals(ErrorCode.NOT_FOUND)) {
-                    throw new GenericErrorCodeException("incorrect user", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+                    throw new GenericErrorCodeException("user not found", ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
                 }
                 throw e;
             }
@@ -183,20 +152,20 @@ public class AdminAccountServiceImpl implements AdminAccountService {
             valueMap.put(OTP, otp);
             accountVerificationCache.save(reference, mapToJsonConverter(valueMap));
 
-            notificationService.sendSMS(SmsRequest.builder().build());
+            notificationService.sendEmail(EmailRequest.builder().build());
 
-            log.info("==> pin reset opt [{}]", otp);
-            return BaseResponse.success(PinResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
+            log.info("==> password reset opt [{}]", otp);
+            return BaseResponse.success(ResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
         } catch (GenericErrorCodeException e) {
             throw e;
         } catch (Exception e) {
             log.error("Error occurred while sending otp to {}:: ", userInput, e);
-            throw GenericErrorCodeException.pinResetFailed();
+            throw GenericErrorCodeException.resetFailed();
         }
     }
 
     @Override
-    public BaseResponse verifyPinResetOtp(PinResetOtpRequest requestDto) throws GenericErrorCodeException {
+    public BaseResponse verifyPasswordResetOtp(ResetOtpRequest requestDto) throws GenericErrorCodeException {
         try {
             var value = accountVerificationCache.get(requestDto.getReference());
             if (Objects.isNull(value) || !jsonToMapConverter(value).get(OTP).equals(requestDto.getOtp())) {
@@ -208,35 +177,30 @@ public class AdminAccountServiceImpl implements AdminAccountService {
             String reference = RESET_PIN.concat(UUIDGenerator.generate());
             accountVerificationCache.save(reference, mapToJsonConverter(jsonToMapConverter(value)));
 
-            return BaseResponse.success(PinResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
+            return BaseResponse.success(ResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
         } catch (GenericErrorCodeException e) {
             throw e;
         } catch (Exception e) {
             log.error("OTP verification failed for Reference: [{}], Error Message: {}", requestDto.getReference(), e.getMessage());
-            throw GenericErrorCodeException.pinResetFailed();
+            throw GenericErrorCodeException.resetFailed();
         }
     }
 
     @Override
-    public BaseResponse saveNewPin(PinUpdateRequest requestDto) throws GenericErrorCodeException {
+    public BaseResponse saveNewPassword(PasswordUpdateRequest requestDto) throws GenericErrorCodeException {
         try {
             var value = accountVerificationCache.get(requestDto.getReference());
             if (Objects.isNull(value)) {
-                throw GenericErrorCodeException.pinResetFailed();
+                throw GenericErrorCodeException.resetFailed();
             }
 
             Map<String, Object> mappedValue = jsonToMapConverter(value);
-            UserRepresentation user = new UserRepresentation();
-            if (mappedValue.get(LOGIN_USER).toString().matches("\\d+")) {
-                user = keycloakAdminService.getUserByPhoneNumber(mappedValue.get(LOGIN_USER).toString());
-            } else {
-                user = keycloakAdminService.getUserByEmail(mappedValue.get(LOGIN_USER).toString());
-            }
+            UserRepresentation user =keycloakAdminService.getUserByEmail(mappedValue.get(LOGIN_USER).toString());
 
-            String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getPin(), String.class);
-            ValidateUtil.isValidPinPattern(pin);
+            String password = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getPassword(), String.class);
+            ValidateUtil.isValidPasswordPattern(password);
 
-            CredentialRepresentation credential = Credentials.createPinCredentials(pin);
+            CredentialRepresentation credential = Credentials.createCredentials(password);
             credential.setTemporary(false);
             user.setCredentials(Collections.singletonList(credential));
 
@@ -244,8 +208,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
             return BaseResponse.success(UPDATED, BaseResponseMessage.SUCCESSFUL);
         } catch (Exception e) {
-            log.error("Pin update for Reference: [{}] failed, Error Message: {}", requestDto.getReference(), e.getMessage());
-            throw GenericErrorCodeException.pinResetFailed();
+            log.error("Password update for Reference: [{}] failed, Error Message: {}", requestDto.getReference(), e.getMessage());
+            throw GenericErrorCodeException.resetFailed();
         }
     }
 }

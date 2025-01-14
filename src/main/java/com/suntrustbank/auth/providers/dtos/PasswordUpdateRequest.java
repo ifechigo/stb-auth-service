@@ -4,12 +4,13 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+
 @Getter
 @Setter
-public class PinResetOtpRequest {
+public class PasswordUpdateRequest {
     @NotBlank(message = "reference is required")
     private String reference;
 
-    @NotBlank(message = "otp is required")
-    private String otp;
+    @NotBlank(message = "password field is required")
+    private String password;
 }

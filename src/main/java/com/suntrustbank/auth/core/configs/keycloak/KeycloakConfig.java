@@ -94,7 +94,7 @@ public class KeycloakConfig {
                 .password(pin);
     }
 
-    public KeycloakBuilder newAdminKeycloakBuilderWithPinCredentials(String username, String pin) {
+    public KeycloakBuilder newAdminKeycloakBuilderWithPasswordCredentials(String username, String password) {
         return KeycloakBuilder.builder()
                 .realm(adminRealm)
                 .serverUrl(serverUrl)
@@ -103,22 +103,12 @@ public class KeycloakConfig {
                 .grantType(OAuth2Constants.PASSWORD)
                 .scope(OAuth2Constants.SCOPE_OPENID)
                 .username(username)
-                .password(pin);
+                .password(password);
     }
 
     public KeycloakBuilder newKeycloakBuilderWithClientCredentials(String terminalSerialNo, String terminalSecret) {
         return KeycloakBuilder.builder()
                 .realm(realm)
-                .serverUrl(serverUrl)
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .scope(OAuth2Constants.SCOPE_OPENID)
-                .clientId(terminalSerialNo)
-                .clientSecret(terminalSecret);
-    }
-
-    public KeycloakBuilder newAdminKeycloakBuilderWithClientCredentials(String terminalSerialNo, String terminalSecret) {
-        return KeycloakBuilder.builder()
-                .realm(adminRealm)
                 .serverUrl(serverUrl)
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
                 .scope(OAuth2Constants.SCOPE_OPENID)

@@ -61,13 +61,13 @@ public class AuthenticationUserController {
 
 
     @PostMapping("/pin-reset")
-    public ResponseEntity resetPin(@RequestBody @Validated PinResetRequest pinResetRequestDto) throws GenericErrorCodeException {
-        return ResponseEntity.ok(accountService.pinReset(pinResetRequestDto));
+    public ResponseEntity resetPin(@RequestBody @Validated ResetRequest resetRequestDto) throws GenericErrorCodeException {
+        return ResponseEntity.ok(accountService.pinReset(resetRequestDto));
     }
 
     @PostMapping("/pin-reset/verify")
-    public ResponseEntity verifyPinUpdate(@RequestBody @Validated PinResetOtpRequest pinResetOtpRequest) throws GenericErrorCodeException {
-        return ResponseEntity.ok(accountService.verifyPinResetOtp(pinResetOtpRequest));
+    public ResponseEntity verifyPinUpdate(@RequestBody @Validated ResetOtpRequest resetOtpRequest) throws GenericErrorCodeException {
+        return ResponseEntity.ok(accountService.verifyPinResetOtp(resetOtpRequest));
     }
 
     @PutMapping("/pin-reset")

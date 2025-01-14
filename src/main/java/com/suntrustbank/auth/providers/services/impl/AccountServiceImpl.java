@@ -64,6 +64,7 @@ public class AccountServiceImpl implements AccountService {
         AuthRequest requestDto = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), request.getData(), AuthRequest.class);
         FieldValidatorUtil.validate(requestDto);
         UserRepresentation user;
+        requestDto.setPhoneNumber("0000000010");
 
         try {
             if (StringUtils.hasText(requestDto.getPhoneNumber())) {
@@ -146,7 +147,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public BaseResponse pinReset(PinResetRequest requestDto) throws GenericErrorCodeException {
+    public BaseResponse pinReset(ResetRequest requestDto) throws GenericErrorCodeException {
         String userInput = "";
         try {
             try {
@@ -185,17 +186,17 @@ public class AccountServiceImpl implements AccountService {
             notificationService.sendSMS(SmsRequest.builder().build());
 
             log.info("==> pin reset opt [{}]", otp);
-            return BaseResponse.success(PinResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
+            return BaseResponse.success(ResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
         } catch (GenericErrorCodeException e) {
             throw e;
         } catch (Exception e) {
             log.error("Error occurred while sending otp to {}:: ", userInput, e);
-            throw GenericErrorCodeException.pinResetFailed();
+            throw GenericErrorCodeException.resetFailed();
         }
     }
 
     @Override
-    public BaseResponse verifyPinResetOtp(PinResetOtpRequest requestDto) throws GenericErrorCodeException {
+    public BaseResponse verifyPinResetOtp(ResetOtpRequest requestDto) throws GenericErrorCodeException {
         try {
             var value = accountVerificationCache.get(requestDto.getReference());
             if (Objects.isNull(value) || !jsonToMapConverter(value).get(OTP).equals(requestDto.getOtp())) {
@@ -207,12 +208,12 @@ public class AccountServiceImpl implements AccountService {
             String reference = RESET_PIN.concat(UUIDGenerator.generate());
             accountVerificationCache.save(reference, mapToJsonConverter(jsonToMapConverter(value)));
 
-            return BaseResponse.success(PinResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
+            return BaseResponse.success(ResetResponse.builder().reference(reference).build(), BaseResponseMessage.SUCCESSFUL);
         } catch (GenericErrorCodeException e) {
             throw e;
         } catch (Exception e) {
             log.error("OTP verification failed for Reference: [{}], Error Message: {}", requestDto.getReference(), e.getMessage());
-            throw GenericErrorCodeException.pinResetFailed();
+            throw GenericErrorCodeException.resetFailed();
         }
     }
 
@@ -221,7 +222,7 @@ public class AccountServiceImpl implements AccountService {
         try {
             var value = accountVerificationCache.get(requestDto.getReference());
             if (Objects.isNull(value)) {
-                throw GenericErrorCodeException.pinResetFailed();
+                throw GenericErrorCodeException.resetFailed();
             }
 
             Map<String, Object> mappedValue = jsonToMapConverter(value);
@@ -235,7 +236,7 @@ public class AccountServiceImpl implements AccountService {
             String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getPin(), String.class);
             ValidateUtil.isValidPinPattern(pin);
 
-            CredentialRepresentation credential = Credentials.createPinCredentials(pin);
+            CredentialRepresentation credential = Credentials.createCredentials(pin);
             credential.setTemporary(false);
             user.setCredentials(Collections.singletonList(credential));
 
@@ -244,7 +245,7 @@ public class AccountServiceImpl implements AccountService {
             return BaseResponse.success(UPDATED, BaseResponseMessage.SUCCESSFUL);
         } catch (Exception e) {
             log.error("Pin update for Reference: [{}] failed, Error Message: {}", requestDto.getReference(), e.getMessage());
-            throw GenericErrorCodeException.pinResetFailed();
+            throw GenericErrorCodeException.resetFailed();
         }
     }
 }

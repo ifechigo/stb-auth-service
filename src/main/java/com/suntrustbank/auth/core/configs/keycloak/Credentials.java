@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class Credentials {
 
-    public static CredentialRepresentation createPinCredentials(String password) {
+    public static CredentialRepresentation createCredentials(String password) {
         CredentialRepresentation passwordCredentials = new CredentialRepresentation();
         passwordCredentials.setTemporary(false);
         passwordCredentials.setType(CredentialRepresentation.PASSWORD);

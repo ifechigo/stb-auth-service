@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum PublisherDetails {
     NOTIFICATION_EXCHANGE_NAME("notification.exchange"),
-    SMS_ROUTING_KEY("sms");
+    SMS_ROUTING_KEY("sms"),
+    EMAIL_ROUTING_KEY("email");
 
     private final String value;
 

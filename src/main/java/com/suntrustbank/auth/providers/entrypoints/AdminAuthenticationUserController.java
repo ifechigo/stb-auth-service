@@ -21,7 +21,7 @@ public class AdminAuthenticationUserController {
     private final JwtUtil jwtService;
 
     @PostMapping("/signup")
-    public ResponseEntity createUser(@RequestBody @Validated AuthCreationRequest authCreationRequest) throws GenericErrorCodeException {
+    public ResponseEntity createUser(@RequestBody @Validated AuthAdminCreationRequest authCreationRequest) throws GenericErrorCodeException {
         return ResponseEntity.ok(adminAccountService.createUser(authCreationRequest));
     }
 
@@ -38,13 +38,6 @@ public class AdminAuthenticationUserController {
         return ResponseEntity.ok(adminAccountService.updateEmail(userId, email));
     }
 
-    @PutMapping("/update/phone/{phoneNumber}")
-    public ResponseEntity updatePhoneNumber(@RequestHeader("Authorization") String authorizationHeader,
-                                            @PathVariable String phoneNumber) throws GenericErrorCodeException {
-        var userId = (String) jwtService.extractAllClaims(authorizationHeader, USER_NAME).orElseThrow(GenericErrorCodeException::unAuthorizedToken);
-        return ResponseEntity.ok(adminAccountService.updatePhoneNumber(userId, phoneNumber));
-    }
-
     @PutMapping("/update/profile")
     public ResponseEntity update(@RequestHeader("Authorization") String authorizationHeader,
                                  @RequestBody UpdateRequest requestDto) throws GenericErrorCodeException {
@@ -52,26 +45,26 @@ public class AdminAuthenticationUserController {
         return ResponseEntity.ok(adminAccountService.update(userId, requestDto));
     }
 
-    @PutMapping("/update/pin")
-    public ResponseEntity updatePin(@RequestHeader("Authorization") String authorizationHeader,
-                                    @RequestBody @Validated UpdatePinRequest requestDto) throws GenericErrorCodeException {
+    @PutMapping("/update/password")
+    public ResponseEntity updatePassword(@RequestHeader("Authorization") String authorizationHeader,
+                                    @RequestBody @Validated UpdatePasswordRequest requestDto) throws GenericErrorCodeException {
         var userId = (String) jwtService.extractAllClaims(authorizationHeader, USER_NAME).orElseThrow(GenericErrorCodeException::unAuthorizedToken);
-        return ResponseEntity.ok(adminAccountService.updatePin(userId, requestDto));
+        return ResponseEntity.ok(adminAccountService.updatePassword(userId, requestDto));
     }
 
 
-    @PostMapping("/pin-reset")
-    public ResponseEntity resetPin(@RequestBody @Validated PinResetRequest pinResetRequestDto) throws GenericErrorCodeException {
-        return ResponseEntity.ok(adminAccountService.pinReset(pinResetRequestDto));
+    @PostMapping("/password-reset")
+    public ResponseEntity resetPassword(@RequestBody @Validated ResetRequest resetRequestDto) throws GenericErrorCodeException {
+        return ResponseEntity.ok(adminAccountService.passwordReset(resetRequestDto));
     }
 
-    @PostMapping("/pin-reset/verify")
-    public ResponseEntity verifyPinUpdate(@RequestBody @Validated PinResetOtpRequest pinResetOtpRequest) throws GenericErrorCodeException {
-        return ResponseEntity.ok(adminAccountService.verifyPinResetOtp(pinResetOtpRequest));
+    @PostMapping("/password-reset/verify")
+    public ResponseEntity verifyPasswordUpdate(@RequestBody @Validated ResetOtpRequest resetOtpRequest) throws GenericErrorCodeException {
+        return ResponseEntity.ok(adminAccountService.verifyPasswordResetOtp(resetOtpRequest));
     }
 
-    @PutMapping("/pin-reset")
-    public ResponseEntity saveNewPin(@RequestBody @Validated PinUpdateRequest pinUpdateRequestDto) throws GenericErrorCodeException {
-        return ResponseEntity.ok(adminAccountService.saveNewPin(pinUpdateRequestDto));
+    @PutMapping("/password-reset")
+    public ResponseEntity saveNewPassword(@RequestBody @Validated PasswordUpdateRequest pinUpdateRequestDto) throws GenericErrorCodeException {
+        return ResponseEntity.ok(adminAccountService.saveNewPassword(pinUpdateRequestDto));
     }
 }

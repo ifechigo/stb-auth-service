@@ -53,7 +53,7 @@ public class KeycloakService {
         String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), userDTO.getPin(), String.class);
         ValidateUtil.isValidPinPattern(pin);
 
-        CredentialRepresentation credential = Credentials.createPinCredentials(pin);
+        CredentialRepresentation credential = Credentials.createCredentials(pin);
         credential.setTemporary(false);
 
         UserRepresentation user = new UserRepresentation();
@@ -195,7 +195,7 @@ public class KeycloakService {
 
         String pin = AESEncryptionUtils.decrypt(authConfig.getPassphrase(), authConfig.getSalt(), requestDto.getNewPin(), String.class);
         ValidateUtil.isValidPinPattern(pin);
-        CredentialRepresentation credential = Credentials.createPinCredentials(pin);
+        CredentialRepresentation credential = Credentials.createCredentials(pin);
         credential.setTemporary(false);
         user.setCredentials(Collections.singletonList(credential));
 
